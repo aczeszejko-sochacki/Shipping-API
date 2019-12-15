@@ -6,9 +6,11 @@ import (
 	"server"
 )
 
+const port = ":8081"
+
 func main() {
 	c := server.ShippingServer("myServer")
 	c.Routes()
 
-	log.Fatal(http.ListenAndServe(":8081", nil))
+	log.Fatal(http.ListenAndServe(port, nil))
 }

@@ -14,7 +14,7 @@ func OsrmRouteReq(src, dst Coords) (resp *http.Response, err error) {
 	srcJoined := strings.Join([]string {src.Lat, src.Lon}, ",")
 	dstJoined := strings.Join([]string {dst.Lat, dst.Lon}, ",")
 
-	base, err := url.Parse(osrmUrl)
+	base, _ := url.Parse(osrmUrl)
 	
 	// Path params
 	base.Path += srcJoined
@@ -47,12 +47,22 @@ func OsrmRouteReqDurDist(resp *http.Response) (duration, distance float64) {
 	return
 }
 
-func OsrmRouteReqDurDistMany(src Coords, dsts []Coords) (shipments []ShipmentDurDist, err error) {
+func OsrmRouteReqDurDistMany(src Coords, dsts []Coords) (shipments []ShipmentDurDist, err string) {
 	for _, dst := range dsts {
 		// Send a request to osrm
-		resp, err := OsrmRouteReq(src, dst)
-		if err != nil {
-			return shipments, err
+		resp, errOsrm := OsrmRouteReq(src, dst)
+
+		// From docs: An error is returned if there were too many redirects
+		// or if there was an HTTP protocol error.
+		// A non-2xx response doesn't cause an error
+		if errOsrm != nil {
+			err = "internal"
+			return
+		}
+
+		if resp.StatusCode == http.StatusTooManyRequests {
+			err = "too many requests"
+			return
 		}
 
 		// Extract duration and distance fields
